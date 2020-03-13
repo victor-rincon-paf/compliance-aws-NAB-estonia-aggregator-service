@@ -1,0 +1,162 @@
+openapi: 3.0.3
+info:
+  title: Compliance AWS report data aggregator service for No Betting Account site
+  description: This service compiles data for compliance reports related to No Betting Account Site. The data will be consumed by a gateway that offers a SOAP interface to EHMA, the estonian gambling authority
+  version: 0.0.1
+servers:
+  - url: 'https://compliance.paf.com'
+paths:
+  /reports/EHMAKAM1:
+    get:
+      summary: Returns a list of types of game with data aggregation
+      description: The service “Remote gambling and toto” (EHMAKAM1) enables to query aggregate data on remote gambling and toto games during the period, organised by type of game
+      parameters:
+        - in: query
+          name: startDate
+          schema:
+            type: string
+          description: The starting date for the report
+        - in: query
+          name: endDate
+          schema:
+            type: string
+          description: The ending date for the report
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EHMAKAM1Response'
+        '401':
+          description: Not Authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /reports/EHMAKAM2:
+    get:
+      summary: Returns a list of deposits and withdrawals
+      description: The service “Remote gambling and toto funds transfers” (EHMAKAM2) enables to query by period the data for funds transfers that have taken place between the operator and gamblers during the input period. The results are sorted by the date of the transfer. Data should only be submitted on successfully completed transactions.
+      parameters:
+        - in: query
+          name: startDate
+          schema:
+            type: string
+          description: The starting date for the report
+        - in: query
+          name: endDate
+          schema:
+            type: string
+          description: The ending date for the report
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EHMAKAM2Response'
+        '401':
+          description: Not Authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    Error:
+      title: error response
+      type: object
+      required:
+        - status
+        - errors
+      properties:
+        status:
+          type: integer
+          description: the status code
+          example: 401
+        errors:
+          type: array
+          items:
+            type: object
+            required:
+              - error_code
+              - error_detail
+            properties:
+              error_code:
+                type: string
+                description: machine-readable error code
+                example: 'NOT_AUTHORIZED'
+              error_detail:
+                type: string
+                description: human-readable error description
+                example: 'Not authorized'
+              properties:
+                type: object
+                description: optional properties providing the client further information about the error and how to resolve it
+                additionalProperties: true
+
+    EHMAKAM1Response:
+      title: EHMAKAM1 response
+      type: array
+      items:
+        $ref: '#/components/schemas/EHMAKAM1ResponseItem'
+      minItems: 0
+      maxItems: 3
+      description: At most one occurrency for KOM, one for KOS, one for KTO
+
+    EHMAKAM1ResponseItem:
+      title: EHMAKAM1 response item
+      type: object
+      required:
+        - gamingClass
+        - totalBets
+        - totalWins
+        - playersNumber
+      properties:
+        gamingClass:
+          description: Different games are categorized to these three gaming classes
+          type: string
+          enum: [KOM, KTO, KOS]
+          example: "KOM"
+        totalBets:
+          description: Total amount of bets placed for the given gamingClass
+          type: number
+          format: double
+          example: 145.68
+        totalWins:
+          description: Total amount of wins for the given gamingClass
+          type: number
+          format: double
+          example: 78.90
+        playersNumber:
+          description: Total amount of players for the given gamingClass
+          type: integer
+          example: 42
+
+    EHMAKAM2Response:
+      title: EHMAKAM2 response
+      type: array
+      items:
+        $ref: '#/components/schemas/EHMAKAM2ResponseItem'
+
+    EHMAKAM2ResponseItem:
+      title: EHMAKAM2 response item
+      type: object
+      properties:
+        amount:
+          description: Amount for the transaction
+          type: number
+          format: double
+          example: 2.48
+        date:
+          description: Total amount of bets placed for the given gamingClass
+          type: string
+          format: date-time
+          example: "2020-03-13T12:26:54.286Z"
+        direction:
+          description: deposit or withdrawal
+          type: string
+          enum: [DEPOSIT, WITHDRAWAL]
+          example: "DEPOSIT"
